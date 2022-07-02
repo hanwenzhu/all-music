@@ -1,6 +1,5 @@
 node_modules/
 .vscode/
-build/
-*.pdf
-*.mxl
-*.musicxml
+static/musicxml/
+dist/
+.DS_Store
