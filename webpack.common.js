@@ -8,7 +8,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Production',
+      title: 'All Music',
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -31,6 +31,10 @@ module.exports = {
       {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.s[ac]ss$/i,
+        use: ['style-loader', 'css-loader', 'sass-loader']
       },
       {
         test: /\.xsl$/i,

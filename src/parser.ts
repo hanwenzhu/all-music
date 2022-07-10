@@ -11,6 +11,7 @@ export class MusicXMLParser implements Parser {
   xml: Document;
   timepartConverter: XSLTProcessor;
 
+  globalDivisions: number;
   divisions: number;
   enharmonicMajor: number;
   tracks: TimedNote[][];
@@ -113,7 +114,7 @@ export class MusicXMLParser implements Parser {
   }
 
   parseMeasure(measure: Node) {
-    // determine divisions
+    // <divisions>: number of divisions of a quarter note as denominator
     const measureDivisions = this.getNumber(measure, 'number(./attributes/divisions)');
     if (!Number.isNaN(measureDivisions))
       this.divisions = measureDivisions;
@@ -121,11 +122,7 @@ export class MusicXMLParser implements Parser {
     // write key to this.enharmonicMajor
     this.parseKey(this.getNode(measure, './attributes/key'));
 
-    // <divisions>: number of divisions of a quarter note as denominator
-    const durationUnit = MIN_DIVISION / (4 * this.divisions);
-    if (!Number.isInteger(durationUnit)) {
-      console.warn(`Minimum division in MusicXML should be a multiple of ${MIN_DIVISION}th beat. Using nearest approximation.`);
-    }
+    const durationUnit = this.globalDivisions / this.divisions;
 
     this.getNodes(measure, './*').forEach(step => {
       if (step.nodeName === 'backup' || step.nodeName === 'forward') {
@@ -144,7 +141,10 @@ export class MusicXMLParser implements Parser {
 
       const pitchNode = this.getNode(step, './pitch');
       const restNode = this.getNode(step, './rest');
-      const numDurationUnits = this.getNumber(step, 'number(./duration)');
+      const numDurationUnits = this.getNumber(step, 'number(./duration)') || 0;
+
+      if (numDurationUnits === 0)
+        console.warn('Note has no <duration> (likely grace note). Transcribing as 0 duration.');
       
       const startsTie = this.getNode(step, './tie[@type="start"]') ? true : false;
       const stopsTie = this.getNode(step, './tie[@type="stop"]') ? true : false;
@@ -238,6 +238,17 @@ export class MusicXMLParser implements Parser {
     // values to write to
     this.enharmonicMajor = null;
     this.tracks = [];
+
+    // LCM of all divisions of a quarter note
+    // globalDivisions * 4 <=> MIN_DIVISIONS
+    const gcd = (n: number, m: number): number => n === 0 ? m : gcd(m % n, n);
+    const lcm = (n: number, m: number): number => n * m / gcd(n, m);
+    this.globalDivisions = this.getNodes(root, './part/measure/attributes/divisions')
+      .map(divisions => this.getNumber(divisions, 'number(.)'))
+      .concat(MIN_DIVISION / 4)
+      .reduce(lcm);
+    if (this.globalDivisions !== MIN_DIVISION / 4)
+      console.warn(`Duration does not fit ${MIN_DIVISION}th notes. Reducing tempo.`)
 
     scoreParts.forEach((scorePart, i) => {
       const partId = this.getString(scorePart, 'string(./@id)');

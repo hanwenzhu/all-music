@@ -53,36 +53,47 @@ export class Enum extends BaseEnumerable<number> {
 export class List<T> extends BaseEnumerable<T[]> {
   entropy: number;
 
-  e: Enumerable<T>;
+  enumerable: Enumerable<T>;
+  topLevel: boolean;
 
-  constructor(e: Enumerable<T>, expectedLength: bigint | number) {
+  /**
+   * @param enumerable Enumerable object for each element
+   * @param expectedLength Expected length for the list (for entropy estimation)
+   * @param topLevel Whether decoding should consume entire code
+   */
+  constructor(enumerable: Enumerable<T>, expectedLength: bigint | number, topLevel: boolean = false) {
     super();
-    this.entropy = (1 + e.entropy) * Number(expectedLength);
-    this.e = e;
+    this.entropy = (1 + enumerable.entropy) * Number(expectedLength);
+    this.enumerable = enumerable;
+    this.topLevel = topLevel;
   }
 
   encodeTo(values: T[], n: bigint): bigint {
     // big endian is more intuitive for sequences
-    // nil = 0
-    n *= 2n;
-    for (let i = values.length - 1; i >= 0; i--) {
-      n = this.e.encodeTo(values[i], n);
-      // cons = 1
+    if (!this.topLevel) {
+      // nil = 0
       n *= 2n;
-      n++;
+    }
+    for (let i = values.length - 1; i >= 0; i--) {
+      n = this.enumerable.encodeTo(values[i], n);
+      if (!this.topLevel) {
+        // cons = 1
+        n *= 2n;
+        n++;
+      }
     }
     return n;
   }
 
   decodeFrom(n: bigint): [T[], bigint] {
     const values: T[] = [];
-    while (n % 2n == 1n) {
-      n /= 2n;
-      const [x, m] = this.e.decodeFrom(n);
+    while (this.topLevel && n > 0n || !this.topLevel && n % 2n == 1n) {
+      if (!this.topLevel) n /= 2n;
+      const [x, m] = this.enumerable.decodeFrom(n);
       values.push(x);
       n = m;
     }
-    n /= 2n;
+    if (!this.topLevel) n /= 2n;
     return [values, n];
   }
 }
@@ -96,7 +107,7 @@ export class List<T> extends BaseEnumerable<T[]> {
 //   count: bigint;
 //   entropy: number;
 
-//   e: Enumerable<T>;
+//   enumerable: Enumerable<T>;
 //   length: bigint;
 
 //   private static choose(n: bigint, k: bigint): bigint {
@@ -108,24 +119,24 @@ export class List<T> extends BaseEnumerable<T[]> {
 //     return count;
 //   }
 
-//   constructor(e: Enumerable<T>, length: bigint) {
-//     this.count = Choose.choose(e.count, length);
+//   constructor(enumerable: Enumerable<T>, length: bigint) {
+//     this.count = Choose.choose(enumerable.count, length);
 //     // entropy requires more assumptions; empty for now
 //     this.entropy = NaN;
-//     this.e = e;
+//     this.enumerable = enumerable;
 //     this.length = length;
 //   }
 
-//   // index of a combination, linear in this.e.count
+//   // index of a combination, linear in this.enumerable.count
 //   encode(values: T[]): bigint {
-//     const combination = values.map(this.e.encode);
+//     const combination = values.map(this.enumerable.encode);
 //     combination.sort((x, y) => Number(x - y));
 //     let m = 0n;
 //     let n = 0n;
 //     for (let j = 0; j < combination.length; j++) {
 //       while (m < combination[j]) {
 //         m++;
-//         n += Choose.choose(this.e.count - m,
+//         n += Choose.choose(this.enumerable.count - m,
 //                            this.length - BigInt(j + 1));
 //       }
 //       m++;
@@ -133,7 +144,7 @@ export class List<T> extends BaseEnumerable<T[]> {
 //     return n;
 //   }
 
-//   // ith combination, linear in this.e.count
+//   // ith combination, linear in this.enumerable.count
 //   decode(n: bigint): T[] {
 //     let combination = new Array<bigint>(Number(this.length));
 //     let p = 0n;
@@ -142,7 +153,7 @@ export class List<T> extends BaseEnumerable<T[]> {
 //       let r: bigint;
 //       do {
 //         m++;
-//         r = Choose.choose(this.e.count - m,
+//         r = Choose.choose(this.enumerable.count - m,
 //                           this.length - BigInt(j + 1));
 //         p += r;
 //       } while (p < n + 1n);
@@ -151,7 +162,7 @@ export class List<T> extends BaseEnumerable<T[]> {
 //     }
 //     combination[Number(this.length - 1n)] =
 //       combination[Number(this.length - 2n)] + n + 1n - p;
-//     return combination.map(this.e.decode);
+//     return combination.map(this.enumerable.decode);
 //   }
 // }
 

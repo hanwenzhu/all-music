@@ -1,28 +1,28 @@
-import './style.css';
+import './style.sass';
 import { musicEnumerable } from './music';
 import { Display, VexDisplay } from './display';
 import { Player, ToneJSPlayer } from './player';
 import { Parser, MusicXMLParser } from './parser';
 
-const form = document.createElement('form');
-form.style.display = 'flex';
-const input = document.createElement('textarea');
-input.style.flexGrow = '1';
-input.style.height = '10em';
-const prev = document.createElement('input');
-prev.type = 'button';
-prev.value = '<';
-const next = document.createElement('input');
-next.type = 'button';
-next.value = '>';
-const play = document.createElement('input');
-play.type = 'button';
-play.value = 'Play';
-form.appendChild(prev);
-form.appendChild(input);
-form.appendChild(next);
-form.appendChild(play);
-document.body.appendChild(form);
+document.body.innerHTML += `
+  <form id="opus">
+    <div id="previous">〈</div>
+    <div id="opus-number">
+      <label id="opus-label" for="opus-input">Opus</label>
+      <textarea id="opus-input"></textarea>
+    </div>
+    <div id="next">〉</div>
+  </form>
+  <div id="media-buttons">
+    <span id="play">Play</span>
+  </div>
+`;
+
+const form = document.getElementById('opus');
+const input = document.getElementById('opus-input') as HTMLTextAreaElement;
+const previous = document.getElementById('previous');
+const next = document.getElementById('next')
+const play = document.getElementById('play');
 
 const display: Display = new VexDisplay();
 const player: Player = new ToneJSPlayer();
@@ -53,7 +53,7 @@ input.addEventListener('keydown', event => {
   }
 })
 
-prev.addEventListener('click', () => {
+previous.addEventListener('click', () => {
   input.value = (BigInt(input.value) - 1n).toString();
   render();
 });
@@ -65,7 +65,7 @@ next.addEventListener('click', () => {
 
 play.addEventListener('click', () => player.toggle());
 
-fetch('/static/musicxml/ievan-polkka.xml')
+fetch('/static/musicxml/MozartPianoSonata.musicxml')
   .then(response => response.text())
   .then(source => {
     const music = parser.parseMusicXML(source);

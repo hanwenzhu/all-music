@@ -70,7 +70,6 @@ export type Music = {
   keySignature: KeySignature
 }
 
-// TODO: test if eliminating chord and making it a Bridge.Chord reduces entropy
 const pitchEnumerable: Enumerable<Pitch> = new Enum(Pitch);
 const bridgeEnumerable: Enumerable<Bridge> = new Enum(Bridge);
 const chordEnumerable: Enumerable<Chord> = new List(pitchEnumerable, AVG_CHORD_SIZE);
@@ -84,7 +83,7 @@ const noteEnumerable: Enumerable<Note> = new Struct({
   decoration: decorationEnumerable
 });
 const voiceEnumerable: Enumerable<Voice> = new List(noteEnumerable, AVG_NUM_NOTES);
-const voicesEnumerable: Enumerable<Voice[]> = new List(voiceEnumerable, AVG_NUM_VOICES);
+const voicesEnumerable: Enumerable<Voice[]> = new List(voiceEnumerable, AVG_NUM_VOICES, true);
 export const musicEnumerable: Enumerable<Music> = new Struct({
   voices: voicesEnumerable,
   keySignature: keySignatureEnumerable
@@ -346,18 +345,21 @@ export function musicNumBeats(music: Music): number {
   return Math.max(...music.voices.map(voiceNumBeats));
 }
 
-const rest: Chord = [];
-const c4: Chord = [Pitch.C4];
-const c41: Note = { duration: Duration.D1, chord: c4, bridge: Bridge.None, decoration: Decoration.None };
-const c42: Note = { duration: Duration.D2, chord: c4, bridge: Bridge.Slur, decoration: Decoration.None };
-const c0: Chord = [Pitch.C0];
-const c01: Note = { duration: Duration.D1, chord: c0, bridge: Bridge.None, decoration: Decoration.None };
-const c02: Note = { duration: Duration.D2, chord: c0, bridge: Bridge.Slur, decoration: Decoration.None };
-const cx4: Chord = [Pitch['C#4']];
-const cx41: Note = { duration: Duration.D1, chord: cx4, bridge: Bridge.None, decoration: Decoration.None };
-const cx42: Note = { duration: Duration.D2, chord: cx4, bridge: Bridge.Slur, decoration: Decoration.None };
-const restNote: Note = { duration: Duration.D4, chord: rest, bridge: Bridge.Slur, decoration: Decoration.None };
-const piece: Voice = [c41, c42, c42, cx42, cx41, ...new Array(10).fill(restNote)];
-console.log(dotAndTieNotes(piece));
-console.log(voiceEnumerable.encode(piece));
-console.assert(equals(piece, voiceEnumerable.decode(voiceEnumerable.encode(piece))));
+// test
+(() => {
+  const rest: Chord = [];
+  const c4: Chord = [Pitch.C4];
+  const c41: Note = { duration: Duration.D1, chord: c4, bridge: Bridge.None, decoration: Decoration.None };
+  const c42: Note = { duration: Duration.D2, chord: c4, bridge: Bridge.Slur, decoration: Decoration.None };
+  const c0: Chord = [Pitch.C0];
+  const c01: Note = { duration: Duration.D1, chord: c0, bridge: Bridge.None, decoration: Decoration.None };
+  const c02: Note = { duration: Duration.D2, chord: c0, bridge: Bridge.Slur, decoration: Decoration.None };
+  const cx4: Chord = [Pitch['C#4']];
+  const cx41: Note = { duration: Duration.D1, chord: cx4, bridge: Bridge.None, decoration: Decoration.None };
+  const cx42: Note = { duration: Duration.D2, chord: cx4, bridge: Bridge.Slur, decoration: Decoration.None };
+  const restNote: Note = { duration: Duration.D4, chord: rest, bridge: Bridge.Slur, decoration: Decoration.None };
+  const piece: Voice = [c41, c42, c42, cx42, cx41, ...new Array(10).fill(restNote)];
+  console.log(dotAndTieNotes(piece));
+  console.log(voiceEnumerable.encode(piece));
+  console.assert(equals(piece, voiceEnumerable.decode(voiceEnumerable.encode(piece))));
+})();
