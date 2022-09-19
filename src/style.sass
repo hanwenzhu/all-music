@@ -2,59 +2,53 @@
   box-sizing: border-box
 
 html
-  font-size: 18px
+  font-size: 20px
+  font-family: "Times New Roman", serif
+
+header
+  text-align: center
+  font-variant: small-caps
+
+a
+  text-decoration: underline
+  cursor: pointer
+  user-select: none
+
+.muted
+  opacity: 60%
+  font-size: smaller
   
-#opus
-  display: flex
-  align-items: stretch
-
-  #previous, #next, #play
-    cursor: pointer
-
-  #previous, #next
-    display: flex
-    justify-content: center
-    align-items: center
-    font-size: 150%
-    padding: 1rem
-
-  #previous
-    border-left: 1px solid transparent
-    &:hover
-      border-left-color: black
-  
-  #opus-number
-    flex-grow: 1
-    text-align: center
-    
-    #opus-label
-      display: block
-      font-variant: small-caps
-      font-size: 150%
-
-    #opus-input
-      font-family: inherit
-      font-size: inherit
-      text-align: center
-      resize: none
-      width: 100%
-
-  #next
-    border-right: 1px solid transparent
-    &:hover
-      border-right-color: black
-
-#media-buttons
+#info
   text-align: center
 
-  // & > *::before
-  //   content: ""
-  //   width: 0
-  //   height: 0
-    
-  // #play::before
-  //   margin-top: .3em
-  //   border-top: .3em solid transparent
-  //   border-right: 0
-  //   border-bottom: .3em solid transparent
-  //   border-left: .3em solid black
+  & > *
+    padding: 1em 0.5em
+
+#navigator
+  display: none
+
+  &.expanded
+    display: grid
+  
+  #upload
+    padding: 0.5em
+    grid-area: 1 / 1 / 2 / 2
+  
+  #upload-input
+    display: none
+
+  &::after
+    content: attr(data-replicated-value) " "
+    visibility: hidden
+
+  #number-input
+    resize: none
+    overflow: hidden
+  
+  &::after, #number-input
+    border: 1px solid black
+    padding: 0.5em
+    font: inherit
+    grid-area: 1 / 2 / 2 / 3
+    white-space: pre-wrap
+    word-break: break-all

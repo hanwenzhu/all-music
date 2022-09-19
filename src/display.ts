@@ -12,6 +12,7 @@ export class VexDisplay implements Display {
   private padding: number;
   private lineHeight: number;
 
+  private container: HTMLElement;
   private outputElement: HTMLDivElement;
   private renderer: Vex.Renderer;
   private context: Vex.RenderContext;
@@ -19,8 +20,9 @@ export class VexDisplay implements Display {
   music: Music;
 
   setup(container: HTMLElement) {
+    this.container = container;
     this.outputElement = document.createElement('div');
-    container.appendChild(this.outputElement);
+    this.container.appendChild(this.outputElement);
 
     this.renderer = new Vex.Renderer(this.outputElement, Vex.Renderer.Backends.SVG);
 
@@ -31,9 +33,9 @@ export class VexDisplay implements Display {
   }
 
   resize(lineHeight?: number, padding?: number) {
-    this.width = this.outputElement.clientWidth;
+    this.width = this.container.clientWidth;
     this.lineHeight = lineHeight || this.lineHeight || 120;
-    this.padding = padding || this.padding || 10;;
+    this.padding = padding || this.padding || 20;
 
     if (this.music)
       this.render(this.music);
@@ -192,8 +194,6 @@ export class VexDisplay implements Display {
       numLines++;
     }
     
-    console.log(voices);
-    
     // NOTE: should each voice have a separate stave?
     while (voices.some(voice => voice.length > 0)) {
       const stave = this.getStave(numLines);
@@ -210,7 +210,6 @@ export class VexDisplay implements Display {
       let vexVoices: Vex.Voice[];
       let vexDecorations: Vex.Element[];
 
-      console.log(+new Date());
       do {
         const numBeatsInLine = numWholeNotes * MIN_DIVISION;
 
@@ -235,8 +234,6 @@ export class VexDisplay implements Display {
 
         width = formatter.preCalculateMinTotalWidth(vexVoices);
         // approximate number of whole notes
-        console.log(justifyWidth, width);
-        console.log(numWholeNotes, numWholeNotes * justifyWidth / width);
         numWholeNotes = Math.min(
           numWholeNotes - 1,
           Math.ceil(numWholeNotes * justifyWidth / width)
@@ -245,7 +242,6 @@ export class VexDisplay implements Display {
         numWholeNotes > 0 &&
         width > justifyWidth
       );
-      console.log(+new Date());
 
       voices = voicesLeft;
 

@@ -9,6 +9,8 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       title: 'All Music',
+      template: './src/index.ejs',
+      inject: false,
     }),
     new CopyWebpackPlugin({
       patterns: [

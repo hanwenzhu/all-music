@@ -6,7 +6,6 @@ export interface Player {
   load(music: Music): void
   start?(): void
   pause?(): void
-  toggle?(): void
   stop?(): void
 }
 
@@ -49,11 +48,5 @@ export class ToneJSPlayer implements Player {
   pause() {
     this.synth.releaseAll();
     Tone.Transport.pause();
-  }
-
-  toggle() {
-    this.synth.releaseAll();
-    Tone.Transport.toggle();
-    Tone.start();
   }
 }

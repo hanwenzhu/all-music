@@ -1,9 +1,9 @@
 import timepartSource from './xsl/timepart.xsl';
 import { Bridge, Decoration, fifthsToKeySignature, midiToPitch, MIN_DIVISION, Music, Pitch, stringToMidi, TimedNote, untimeNotes, Voice } from './music';
+import * as JSZip from 'JSZip';
 
 export interface Parser {
-  parseMusicXML?(source: any, compress?: boolean): Music
-  parseMidi?(source: any, compress?: boolean): Music
+  parse(source: any, compress?: boolean): Promise<Music>
 }
 
 export class MusicXMLParser implements Parser {
@@ -220,12 +220,29 @@ export class MusicXMLParser implements Parser {
 
   /**
    * Parses a MusicXML document.
-   * @param source MusicXML source in raw XML string
+   * @param source MusicXML source in raw XML string, or File with compressed MXL
    * @param compress If true, tries to reduce number of voices
    * @returns Parsed music
    */
-  parseMusicXML(source: string, compress: boolean = false): Music {
-    this.xml = this.parser.parseFromString(source, 'text/xml');
+  async parse(source: string | File, compress: boolean = false): Promise<Music> {
+    let musicXMLSource: string;
+
+    if (source instanceof File) {
+      const zipLoader = new JSZip();
+      const zip = await zipLoader.loadAsync(source);
+
+      const metaSource = await zip.file('META-INF/container.xml').async('string');
+      const metaXML = this.parser.parseFromString(metaSource, 'text/xml');
+      const fullPath = metaXML.evaluate(
+        '/container/rootfiles/rootfile/@full-path', metaXML,
+        null, XPathResult.STRING_TYPE, null
+      ).stringValue;
+
+      musicXMLSource = await zip.file(fullPath).async('string');
+    } else {
+      musicXMLSource = source;
+    }
+    this.xml = this.parser.parseFromString(musicXMLSource, 'text/xml');
 
     if (!this.getNode(this.xml, '/score-partwise')) {
       // transform timewise score to partwise
