@@ -7,7 +7,9 @@ html
 
 header
   text-align: center
-  font-variant: small-caps
+
+  h1
+    font-variant: small-caps
 
 a
   text-decoration: underline
@@ -23,32 +25,10 @@ a
 
   & > *
     padding: 1em 0.5em
-
-#navigator
-  display: none
-
-  &.expanded
-    display: grid
-  
-  #upload
-    padding: 0.5em
-    grid-area: 1 / 1 / 2 / 2
-  
-  #upload-input
-    display: none
-
-  &::after
-    content: attr(data-replicated-value) " "
-    visibility: hidden
-
-  #number-input
-    resize: none
-    overflow: hidden
-  
-  &::after, #number-input
-    border: 1px solid black
-    padding: 0.5em
+    
+  #page-input
     font: inherit
-    grid-area: 1 / 2 / 2 / 3
-    white-space: pre-wrap
-    word-break: break-all
+    text-overflow: ellipsis
+  
+#upload-input
+  display: none

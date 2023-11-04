@@ -7,12 +7,11 @@ import { Parser, MusicXMLParser } from './parser';
 var page = 0n;
 
 const sheetDisplay = document.getElementById('sheet-display');
-const pageNumber = document.getElementById('page-number');
 const play = document.getElementById('play');
-const goto = document.getElementById('goto');
-const navigator = document.getElementById('navigator');
-const numberInput = document.getElementById('number-input') as HTMLTextAreaElement;
+const pageInput = document.getElementById('page-input') as HTMLTextAreaElement;
 const uploadInput = document.getElementById('upload-input') as HTMLInputElement;
+const pagePrev = document.getElementById('page-prev');
+const pageNext = document.getElementById('page-next');
 
 const display: Display = new VexDisplay();
 const player: Player = new ToneJSPlayer();
@@ -20,74 +19,77 @@ const parser: Parser = new MusicXMLParser();
 player.setup(document.body);
 display.setup(sheetDisplay);
 
-function ellipsize(string: string, maxWidth: number = 30): string {
-  if (string.length > maxWidth) {
-    return string.substring(0, 10) + '...' + string.substring(string.length - 17);
-  } else {
-    return string;
-  }
+var playing = false;
+function startPlayer() {
+  playing = true;
+  player.start();
+  play.innerText = 'Stop';
+}
+function stopPlayer() {
+  playing = false;
+  player.stop();
+  play.innerText = 'Play'
 }
 
 function render() {
   const value = musicEnumerable.decode(page);
-  const encoded = musicEnumerable.encode(value);
-  pageNumber.innerText = ellipsize(page.toString());
-  display.render(value);
+  stopPlayer();
   console.log('Rendering', value);
+  display.render(value);
+  pageInput.value = page.toString();
+  const encoded = musicEnumerable.encode(value);
   console.assert(page === encoded);
   console.log('Render complete');
 }
 
-function toggleNavigator() {
-  numberInput.value = page.toString();
-  numberInput.parentElement.dataset.replicatedValue = numberInput.value;
-  navigator.classList.toggle('expanded');
-}
-
-numberInput.addEventListener('input', event => {
-  if (/[^0-9]/g.test(numberInput.value)) {
-    numberInput.value = page.toString();
+pageInput.addEventListener('input', event => {
+  if (/[^0-9]/g.test(pageInput.value)) {
+    pageInput.value = page.toString();
     return false;
   }
-  numberInput.parentElement.dataset.replicatedValue = numberInput.value;
-  page = BigInt(numberInput.value);
+  page = BigInt(pageInput.value);
   render();
 });
 
-uploadInput.addEventListener('change', async event => {
+uploadInput.addEventListener('change', async () => {
   if (uploadInput.files.length === 0)
     return;
-  
   const file = uploadInput.files[0];
   loadMusic(file.name.endsWith('.musicxml') ? await file.text() : file);
 });
 
-var playing = false;
-play.addEventListener('click', () => {
-  playing = !playing;
-  if (playing) {
-    const value = musicEnumerable.decode(page);
-    player.load(value);
-    player.start();
-    play.innerText = 'Stop';
-  } else {
-    player.stop();
-    play.innerText = 'Play';
-  }
+pagePrev.addEventListener('click', () => {
+  if (page === 0n)
+    return;
+  page--;
+  render();
 });
 
-goto.addEventListener('click', toggleNavigator);
+pageNext.addEventListener('click', () => {
+  if (page === 0n)
+    return;
+  page++;
+  render();
+});
+
+play.addEventListener('click', () => {
+  if (!playing) {
+    const value = musicEnumerable.decode(page);
+    player.load(value);
+    startPlayer();
+  } else {
+    stopPlayer();
+  }
+});
 
 async function loadMusic(source: string | File) {
   const music = await parser.parse(source);
   console.log('Loaded music', music);
   const encoding = musicEnumerable.encode(music);
   page = encoding;
-  numberInput.value = page.toString();
-  numberInput.parentElement.dataset.replicatedValue = numberInput.value;
+  pageInput.value = page.toString();
   render();
 }
 
-fetch('/static/musicxml/SchbAvMaSample.musicxml')
-  .then(response => response.text())
-  .then(loadMusic);
+page = BigInt(Math.floor(Math.random() * 1e10)) << 1000n + BigInt(Math.floor(Math.random() * 1000));
+render();
